@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  name: <nom_ingress>
+  namespace: <namespace>
+spec:
+  rules:
+  - host: <au_choix>.apps.k8s.aidodev.com
+    http:
+      paths:
+      - backend:
+          serviceName: <nom_service>
+          servicePort: <port_ecoute_service>
+        path: /

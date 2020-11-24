@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: <nom_appli>
+  namespace: <namespace>
+  labels:
+    <nom_label_appli> : <label>
+spec:
+  replicas: <nombre_replicas>
+  selector:
+    matchLabels:
+      <nom_label_appli> : <label>
+  template:
+    metadata:
+      labels:
+        <nom_label_appli> : <label>
+    spec:
+      containers:
+      - image: <image_docker_appli>
+        name: <nom_container>
+        readinessProbe:
+          exec:
+            command:
+            - <command_liveness>
+          initialDelaySeconds: 1
+          periodSeconds: 1
+        livenessProbe:
+          exec:
+            command:
+            - <command_readiness>
+          initialDelaySeconds: 1
+          periodSeconds: 1
+        resources:
+          limits:
+            cpu: 100m
+            memory: 50Mi
+          requests:
+            cpu: 50m
+            memory: 25Mi

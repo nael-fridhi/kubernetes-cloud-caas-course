@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: <nom_service>
+  namespace: <namespace>
+spec:
+  ports:
+  - port: <port_ecoute_service>
+    targetPort: <port_ecoute_appli_web>
+  selector:
+     <nom_label_appli> : <label>
+  type: ClusterIP
