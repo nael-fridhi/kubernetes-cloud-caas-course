@@ -13,7 +13,7 @@ The Flask Application communicate with a postgres database to work.
 
 2. run a postgres database from this image `postgres:12.1-alpine`:
   - You have to expose the same default port of postgres into the host
-  - You have to define the DB Name, User and password when you run the container as an environment variable. **You can find the values of this variables by inspecting the .env file**
+  - You have to define the DB Name, User and password when you run the container as an environment variable. **You can find the values of this variables by inspecting the file.env file**
   - The name of the container must be `notesdb` 
   - The container must be run in a `notes` network of type bridge.
 
@@ -21,6 +21,7 @@ The Flask Application communicate with a postgres database to work.
 
 1. Inspect the Flask application files to learn what files we need to include and exclude from the image. There is a Pipfile.lock, a .gitignore, and a migrations directory. We don't want those in the image.
 
+**N.B: Before adding file to dockerfile you have to change the name of file.env to .env** 
 2. Create a .dockerignore file to exclude build and metadata information from the image.
 
 3. Create the Dockerfile to build the image.
