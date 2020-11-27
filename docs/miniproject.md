@@ -1,63 +1,90 @@
-# Dockerize Notes Flask App
+# Notes App
+
+Migrating static content into containers was a great way to learn the basics of Docker, but real-world uses are usually dynamic, including full applications.
+
+This mini-project will show you the process to dockerize a Flask application. Flask is a lightweight Python WSGI micro web framework, however, you won't need to know any Python to complete this mini-project.
+
+
+## Database & Network Configuration
+
+The Flask Application communicate with a postgres database to work.
+
+1. Create a `notes` network in docker which will contains our application.
+
+2. run a postgres database from this image `postgres:12.1-alpine`:
+  - You have to expose the same default port of postgres into the host
+  - You have to define the DB Name, User and password when you run the container as an environment variable. **You can find the values of this variables by inspecting the .env file**
+  - The name of the container must be `notesdb` 
+  - The container must be run in a `notes` network of type bridge.
+
+## Create Dockerfile for the application
 
 1. Inspect the Flask application files to learn what files we need to include and exclude from the image. There is a Pipfile.lock, a .gitignore, and a migrations directory. We don't want those in the image.
-2. Create a .dockerignore file to exclude build and metadata information from the image.
-3. Create the Dockerfile to build the image.
-  - Start with Python 3 as the base image.
-  - Setup Python environment variables.
-  - Install dependencies in the container from the Pipfile.
-  - Set the working directory.
-  - Specify the port flask will listen on.
-  - Start the flask server.
-  - check_circle
 
+2. Create a .dockerignore file to exclude build and metadata information from the image.
+
+3. Create the Dockerfile to build the image.
+
+  - Start with Python 3 as the base image.
+  - Setup Python environment variables:
+    - PYBASE /pybase
+    - PYTHONUSERBASE $PYBASE
+    - PATH $PYBASE/bin:$PATH
+  - Install dependencies in the container from the Pipfile.
+    - `pip install pipenv`
+    - change temporary workdir /tmp
+    - copy the pipefile into /tmp
+    - execute this command `pipenv lock`
+    - execute this command `PIP_USER=1 PIP_IGNORE_INSTALLED=1 pipenv install -d --system --ignore-pipfile`
+
+  - copy the src files of the app to `/app/notes`
+  - Set the working directory to `/app/notes`
+  - Specify the port flask will listen on `80`
+  - Start the flask server `flask run --port=80 --host=0.0.0.0` 
 
 ## Build and Setup Environment
+
 1. Build an image named notesapp with version 0.1.
+
 2. Inspect the Docker environment to see the new image, and what else is running.
 Use a container of the notesapp image to set up the database.
+`docker run --rm -it --network notes -v /home/cloud_user/notes/migrations:/app/notes/migrations notesapp:0.1 bash`
+- **Note**: The database can be set up via the app itself using the following command.
+  - `flask db init`
+  - `flask db migrate`
+  - `flask db upgrade`
 
-**Note**: The database can be set up via the app itself using the following command.
-  `flask db init && flask db migrate && flask db upgrade`
-
-## Run, Evaluate, and upgrade 
+## Run, Evaluate
 
 1. Run the NotesApp container in the current terminal to watch its output.
 2. View the application in a browser. Sign up for an account, create a note, then edit it.
 3. View the messages in the terminal and check for warnings.
-4. Stop using Flask in debug mode.
-  Remove the line FLASK_ENV=development from the file ~/notes/.env.
-5. Since we've changed a file included in the image, build the image again as version 0.2.
-6. Run the new version of the NotesApp image in the terminal. Debug mode should no longer be on.
-7. Look for any new warnings.
 
-**Note**: We're not in debug anymore, but now Flask tells us "Do not use it in a production deployment". That's not a good way to leave our container.
+## Clean environment
 
-8. Stop the container.
+1. Stop the two containers
+2. Delete network and clean the environment
 
 
-## Upgrade to Gunicorn
+## Docker compose 
 
-We will upgrade our Flask application to use Gunicorn, which is a production-ready WSGI HTTP server. This will involve adding a bit of code to our existing app and upgrading our build.
+1. Create a docker-compose.yml file for our application
+  - The docker-compose will create a network 
+  - Run the database container with the same configuration we did before
+  - Run the flask app container **after** the database container
 
-1. Add Gunicorn to the dependencies using pipenv.
-  Pipenv is being used to manage the dependencies for our application. Let's use the image we have, which includes pipenv, to upgrade the Pipfile so we don't have to install a development environment on the server.
-2.  Upgrade the application code for Gunicorn.
-  Flask can use dotenv automatically, but Gunicorn must be told to use it explicitly. Add the following lines to __init__.py below the import statements:
-``` 
-from dotenv import load_dotenv, find_dotenv
-load_dotenv(find_dotenv())
-```
-3. Change the Dockerfile to run Gunicorn instead of Flask.
-  Replace the WORKDIR and CMD in the Dockerfile with the below code:
-```
-WORKDIR /app
-CMD [ "gunicorn", "-b 0.0.0.0:80", "notes:create_app()"]
-```
+**Optional**: You can create a script to configure the database or simply connect to the container and run the commands as we did above.
 
-## Build a Production Image
+2. verify that the application works well 
 
-Build the NotesApp image again. Remember to increment the version.
-Run a container from the production image, this time using detached mode to run in the background.
-Inspect the Docker environment to ensure everything is running.
-View the application in a browser.
+
+## Kubernetes
+
+In this last section we will deploy this application in a kubernetes cluster:
+
+1. A secret for the database password
+2. A configmap for the other env variables
+3. You have to create a deployment for the flask application
+4. A nodeport type service for the flask application
+5. A Statefulset for the databse
+6. A ClusterIP service for the database
